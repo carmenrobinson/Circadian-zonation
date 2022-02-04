@@ -1,5 +1,3 @@
-This is a personal branch for work on the code published in Droin et al. (2021). All credit and ownership goes to the authors (text below from the original repository).
-
 # Code repository: Space-time logic of liver gene expression at sublobular scale
 The main figures of the paper *Space-time logic of liver gene expression at sublobular scale* can be recreated from this code. All the computations are done in the script "Analysis.ipynb".
 
