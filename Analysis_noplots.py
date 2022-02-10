@@ -68,6 +68,7 @@ for key, val in dic_struc.items():
             load_path = 'Datasets/Profiles/ZT'+x+'.mat'
             mat = scipy.io.loadmat(load_path)
         for name, data, SD in zip(mat['all_genes'], mat['MeanGeneExp'], mat['SE']):
+            print("Step 1: Dictionary", flush=True)
             if name[0][0] not in dic_itz_raw:
                 dic_itz_raw[name[0][0]] = {'rep1' : np.array([]), 'rep1_std' :np.array([]), 'rep2' : np.array([]), 'rep2_std' : np.array([]), 'rep3' : np.array([]), 'rep3_std' :  np.array([])}
                 dic_itz[name[0][0]] = {'rep1' : np.array([]), 'rep1_std' :np.array([]), 'rep2' : np.array([]), 'rep2_std' : np.array([]), 'rep3' : np.array([]), 'rep3_std' :  np.array([])}
@@ -346,9 +347,9 @@ warnings.simplefilter("ignore")
 original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
 signal.signal(signal.SIGINT, original_sigint_handler)
 pool = Pool(n_cpu)
-print("test1")  ##extra
+  ##extra
 try:
-    print("test2") ##extra
+    print("Step 2: Running Regression", flush=True)
     results = pool.map(compute_regressions_mp, l_arg) ##tqdm?
     
 except Exception as e: 
@@ -361,7 +362,7 @@ pool.close()
 pool.join()
 for name_gene, reg in zip(l_names, results):
     dic_reg[name_gene] = reg
-
+print("Step 3: Creating new dictionary", flush=True)
 
 # Make a few 3D plots to check that everything worked fine. First, define the function to plot in 3D.
 
@@ -454,7 +455,7 @@ def compute_figure_3D_mpl(reg_2D, array_gene_time):
 # In[ ]:
 
 
-rom mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D
 import plotly.io as pio
 import time
 from matplotlib.colors import LightSource
@@ -466,6 +467,7 @@ for name_gene, reg in dic_reg.items():
         if len(selected)>1:
             idx+=1
             array_gene_time =np.concatenate( (dic_itz[name_gene]['rep1'], dic_itz[name_gene]['rep2'], dic_itz[name_gene]['rep3'][:,[0,2]]), axis = 1)
+            print("Step 4: Plotting selected gene", flush=True)
             fig =compute_figure_3D_tab_3(reg, array_gene_time)
             iplot(fig)
             compute_figure_3D_mpl(reg, array_gene_time)
