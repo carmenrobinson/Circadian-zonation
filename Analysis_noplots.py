@@ -62,13 +62,14 @@ def invert_transform(y):
 dic_itz = {}
 dic_itz_raw = {}
 dic_struc = {'rep1': ['00A','06A','12A','18A'], 'rep2': ['00B','06B','12B','18B'], 'rep3': ['00C',None,'12C',None]}
+print("Step 1: Dictionary", flush=True)
 for key, val in dic_struc.items():
     for x in val:
         if x is not None:
             load_path = 'Datasets/Profiles/ZT'+x+'.mat'
             mat = scipy.io.loadmat(load_path)
         for name, data, SD in zip(mat['all_genes'], mat['MeanGeneExp'], mat['SE']):
-            print("Step 1: Dictionary", flush=True)
+            
             if name[0][0] not in dic_itz_raw:
                 dic_itz_raw[name[0][0]] = {'rep1' : np.array([]), 'rep1_std' :np.array([]), 'rep2' : np.array([]), 'rep2_std' : np.array([]), 'rep3' : np.array([]), 'rep3_std' :  np.array([])}
                 dic_itz[name[0][0]] = {'rep1' : np.array([]), 'rep1_std' :np.array([]), 'rep2' : np.array([]), 'rep2_std' : np.array([]), 'rep3' : np.array([]), 'rep3_std' :  np.array([])}
@@ -332,7 +333,7 @@ def select_model_last(data, vect_structure, l_formula):
 
 
 def compute_regressions_mp(arg):
-    print("compute")
+    #print("compute")
     [name_gene, force_complete] = arg
     
     array_gene_time =np.concatenate( (dic_itz[name_gene]['rep1'], dic_itz[name_gene]['rep2'], dic_itz[name_gene]['rep3'][:,[0,2]]), axis = 1)
@@ -461,13 +462,13 @@ import time
 from matplotlib.colors import LightSource
 
 idx = 0
+print("Step 4: Plotting selected gene", flush=True)
 for name_gene, reg in dic_reg.items():
     if name_gene=="aldh3a2":
         [selected, B, SE, bic, l_schwartz, Xx_pred, Xt_pred, Y_pred, var_exp, var_exp_re] = reg
         if len(selected)>1:
             idx+=1
             array_gene_time =np.concatenate( (dic_itz[name_gene]['rep1'], dic_itz[name_gene]['rep2'], dic_itz[name_gene]['rep3'][:,[0,2]]), axis = 1)
-            print("Step 4: Plotting selected gene", flush=True)
             fig =compute_figure_3D_tab_3(reg, array_gene_time)
             iplot(fig)
             compute_figure_3D_mpl(reg, array_gene_time)
