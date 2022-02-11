@@ -224,7 +224,7 @@ def return_explained_variance(Y, Y_pred, dic_re = None):
 def make_2D_regression(Y, predict, force_complete = False, formula = None, force_R = False):
     #get dic of design
     Xx, Xt, dic_lm, vect_structure = return_full_design_matrix(precise = False, replicates = True)
-    print("Step 2.1 First Full design Matrix", flush=True)
+    #print("Step 2.1 First Full design Matrix", flush=True)
     #add response
     flat_Y = []
     for y in Y: #dim 8*(4*2)
@@ -237,7 +237,7 @@ def make_2D_regression(Y, predict, force_complete = False, formula = None, force
     model, selected, bic, l_schwartz, dic_re = select_model_last(data, vect_structure, l_formula )
     B = model._results.params
     SE = model._results.bse
-    print("Step 2.2 - Formula and Model selection done", flush=True)
+    #print("Step 2.2 - Formula and Model selection done", flush=True)
 
     
     if predict:
@@ -251,11 +251,11 @@ def make_2D_regression(Y, predict, force_complete = False, formula = None, force
             
         var_exp = return_explained_variance(Y, Y_pred)
         var_exp_re = return_explained_variance(Y, Y_pred, dic_re)
-        print("Step 2 - 2D Regression done", flush=True)    
+        #print("Step 2 - 2D Regression done", flush=True)    
         return selected, B, SE, bic, l_schwartz, Xx_pred, Xt_pred, Y_pred, var_exp, var_exp_re
         
     else:
-        print("Step 2 - 2D Regression done predict=false", flush=True) 
+        #print("Step 2 - 2D Regression done predict=false", flush=True) 
         return selected, B, SE, bic, l_schwartz
 
 
@@ -404,7 +404,7 @@ def compute_regressions_mp(arg):
     selected, B, SE,  bic, l_schwartz, Xx_pred, Xt_pred, Y_pred, var_exp, var_exp_re = make_2D_regression(array_gene_time, predict = True, force_complete = force_complete)
     return [selected, B, SE, bic, l_schwartz, Xx_pred, Xt_pred, Y_pred, var_exp, var_exp_re]    
 
-l_names =  l_names[:20] ##kann angepasst werden für test 
+#l_names =  l_names[:20] ##kann angepasst werden für test 
 dic_reg = {}
 l_arg = [(x, False) for x in l_names]
 n_cpu = 2   #muss angepasst werden 
@@ -414,11 +414,9 @@ signal.signal(signal.SIGINT, original_sigint_handler)
 pool = Pool(n_cpu) 
   ##extra
 try:
-    print("Step 2: Running Regression", flush=True)
-    #l_arg_t = [('0610007p14rik', False)]
-    #results = compute_regressions_mp(l_arg_t)
+    #print("Step 2: Running Regression", flush=True)
     results = pool.map(compute_regressions_mp, l_arg) ##tqdm?
-    print("Step 2: Pooled Regression done", flush=True)
+    #print("Step 2: Pooled Regression done", flush=True)
 except Exception as e: 
     print(e)
     print("BUG")
