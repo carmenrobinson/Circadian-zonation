@@ -117,7 +117,63 @@ l_var = np.array([x if not np.isnan(x) else 10**-10 for x in l_var ])
 l_exp_log = [invert_transform(np.nanmax(np.vstack((dic_itz[gene_name]['rep1'], dic_itz[gene_name]['rep2'],dic_itz[gene_name]['rep3']))))  for gene_name in l_names]
 l_exp = [np.nanmax(np.vstack((dic_itz[gene_name]['rep1'], dic_itz[gene_name]['rep2'],dic_itz[gene_name]['rep3']))) for gene_name in l_names]
 
+set_names_kept_2 = set()
 
+#scatter plot
+fig, ax = plt.subplots(figsize=(5,5))
+plt.scatter(l_exp_log, l_var, s=20, alpha = 1, color = '#34495e')
+
+#add reference genes
+flag_c = True
+flag_z = True
+flag_u = True
+for exp, var,  name in zip(l_exp_log, l_var, l_names):
+    if name in l_zonated:
+        if flag_z:
+            plt.plot(exp, var, markersize = '20', marker = '.', lw = 0, color = "#F37F30", label = 'Reference zonated gene')
+            flag_z = False
+        else:
+            plt.plot(exp, var, markersize = '20', marker = '.', lw = 0,color = "#F37F30")
+    elif name in l_circadian:
+        if flag_c:
+            plt.plot(exp, var, markersize = '20', marker = '.', lw = 0,color = "#2178B4", label = 'Reference rhythmic gene')
+            flag_c = False
+        else:
+            plt.plot(exp, var, markersize = '20', marker = '.', lw = 0,color = "#2178B4")
+    if exp>10**-5 and var<0.5:
+        set_names_kept_2.add(name)    
+
+
+plt.xlim([10**-7,10**-1])
+plt.ylim([0,1])
+#plt.xscale('log', basex=10)
+plt.xlabel('Profile maximal expresion', fontsize=15)
+plt.ylabel('Average relative replicates variance', fontsize=15)
+plt.legend()
+plt.axhline(0.5, xmin = 0.335, ls='--', color = "red", alpha = 0.8)
+plt.axvline(10**-5, ymax = 0.5, ls='--', color = "red", alpha = 0.8)
+plt.savefig('Output/Filtering_consistency.pdf')
+plt.show()
+
+print(len(set_names_kept_2), ' genes remaining after filtering on replicates consistency')
+
+## 2. Preliminary exploration of the data
+
+#Look at the expression in the dataset
+
+#plot the histogram of expression
+l_exp = [ invert_transform(np.nanmax(np.vstack((dic_itz[gene_name]['rep1'], dic_itz[gene_name]['rep2'],dic_itz[gene_name]['rep3'])))) for gene_name in dic_itz]
+plt.hist(l_exp, bins=np.logspace(-8,-1, 50))
+
+#Filter dataset 
+
+dic_itz_clean = {}
+for name in set_names_kept_2:
+    if 'mup' not in name and 'pisd' not in name:
+        dic_itz_clean[name] = dic_itz[name]
+l_names = list(dic_itz_clean.keys())
+
+        
 # ## 3. Do Mixed Model linear regression
 
 # First, create the functions needed for regression
@@ -156,6 +212,8 @@ def return_explained_variance(Y, Y_pred, dic_re = None):
     mean = np.mean(Y)
     var_tot = np.sum( (np.array(Y)-mean)**2 )
     var_res = np.sum( (np.array(Y)-Y_p)**2 )
+    
+    
     if var_tot>0:    
         #return (1-var_res/var_tot)*var_tot
         return (var_tot-var_res)/80
@@ -166,6 +224,7 @@ def return_explained_variance(Y, Y_pred, dic_re = None):
 def make_2D_regression(Y, predict, force_complete = False, formula = None, force_R = False):
     #get dic of design
     Xx, Xt, dic_lm, vect_structure = return_full_design_matrix(precise = False, replicates = True)
+    print("Step 2.1 First Full design Matrix", flush=True)
     #add response
     flat_Y = []
     for y in Y: #dim 8*(4*2)
@@ -178,6 +237,7 @@ def make_2D_regression(Y, predict, force_complete = False, formula = None, force
     model, selected, bic, l_schwartz, dic_re = select_model_last(data, vect_structure, l_formula )
     B = model._results.params
     SE = model._results.bse
+    print("Step 2.2 - Formula and Model selection done", flush=True)
 
     
     if predict:
@@ -191,8 +251,11 @@ def make_2D_regression(Y, predict, force_complete = False, formula = None, force
             
         var_exp = return_explained_variance(Y, Y_pred)
         var_exp_re = return_explained_variance(Y, Y_pred, dic_re)
+        print("Step 2 - 2D Regression done", flush=True)    
         return selected, B, SE, bic, l_schwartz, Xx_pred, Xt_pred, Y_pred, var_exp, var_exp_re
+        
     else:
+        print("Step 2 - 2D Regression done predict=false", flush=True) 
         return selected, B, SE, bic, l_schwartz
 
 
@@ -236,10 +299,11 @@ def return_full_design_matrix(precise = False, replicates = False):
             dic_lm['a' + str(deg)] = 0.5*(3*X_space**deg-1)*X_cos
             dic_lm['b' + str(deg)] = 0.5*(3*X_space**deg-1)*X_sin
             dic_lm['mu' + str(deg)] = 0.5*(3*X_space**deg-1)
+    
 
     return Xx, Xt, dic_lm, vect_structure
 
-def return_l_formula(force_complete, formula = None, force_R = False):
+def return_l_formula(force_complete, formula = None, force_R = False): 
     if formula is not None:
         return [formula]
     elif force_complete:
@@ -340,19 +404,21 @@ def compute_regressions_mp(arg):
     selected, B, SE,  bic, l_schwartz, Xx_pred, Xt_pred, Y_pred, var_exp, var_exp_re = make_2D_regression(array_gene_time, predict = True, force_complete = force_complete)
     return [selected, B, SE, bic, l_schwartz, Xx_pred, Xt_pred, Y_pred, var_exp, var_exp_re]    
 
-#l_names =  l_names[:100] ##kann angepasst werden für test 
+l_names =  l_names[:20] ##kann angepasst werden für test 
 dic_reg = {}
 l_arg = [(x, False) for x in l_names]
-n_cpu = 1   #muss angepasst werden 
+n_cpu = 2   #muss angepasst werden 
 warnings.simplefilter("ignore")
 original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
 signal.signal(signal.SIGINT, original_sigint_handler)
-pool = Pool(n_cpu)
+pool = Pool(n_cpu) 
   ##extra
 try:
     print("Step 2: Running Regression", flush=True)
+    #l_arg_t = [('0610007p14rik', False)]
+    #results = compute_regressions_mp(l_arg_t)
     results = pool.map(compute_regressions_mp, l_arg) ##tqdm?
-    
+    print("Step 2: Pooled Regression done", flush=True)
 except Exception as e: 
     print(e)
     print("BUG")
