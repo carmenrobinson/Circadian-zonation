@@ -1,0 +1,75 @@
+{'text/html': '        <script type="text/javascript">\n        window.PlotlyConfig = {MathJaxConfig: \'local\'};\n        if (window.MathJax) {MathJax.Hub.Config({SVG: {font: "STIX-Web"}});}\n        if (typeof require !== \'undefined\') {\n        require.undef("plotly");\n        requirejs.config({\n            paths: {\n                \'plotly\': [\'https://cdn.plot.ly/plotly-2.9.0.min\']\n            }\n        });\n        require([\'plotly\'], function(Plotly) {\n            window._Plotly = Plotly;\n        });\n        }\n        </script>\n        '}
+Step 1: Dictionary
+5058  genes remaining after filtering on replicates consistency
+<frozen importlib._bootstrap>:219: RuntimeWarning: scipy._lib.messagestream.MessageStream size changed, may indicate binary incompatibility. Expected 56 from C header, got 64 from PyObject
+/home/hpc/johannes.wirth/miniconda3/envs/spatial/lib/python3.8/site-packages/statsmodels/compat/pandas.py:65: FutureWarning: pandas.Int64Index is deprecated and will be removed from pandas in a future version. Use pandas.Index with the appropriate dtype instead.
+  from pandas import Int64Index as NumericIndex
+Analysis_noplots.py:115: RuntimeWarning:
+
+invalid value encountered in double_scalars
+
+Step 2: Running Regression
+Step 2.1 First Full design Matrix
+Step 2.1 First Full design Matrix
+Step 2.2 - Formula and Model selection done
+Step 2.2 - Formula and Model selection done
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2.2 - Formula and Model selection done
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2.2 - Formula and Model selection done
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2.2 - Formula and Model selection done
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2.2 - Formula and Model selection done
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2.2 - Formula and Model selection done
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2.2 - Formula and Model selection done
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2.2 - Formula and Model selection done
+Step 2.2 - Formula and Model selection done
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2.2 - Formula and Model selection done
+Step 2.2 - Formula and Model selection done
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2.2 - Formula and Model selection done
+Step 2.2 - Formula and Model selection done
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2.2 - Formula and Model selection done
+Step 2.2 - Formula and Model selection done
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2.2 - Formula and Model selection done
+Step 2.2 - Formula and Model selection done
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2 - 2D Regression done
+Step 2.2 - Formula and Model selection done
+Step 2 - 2D Regression done
+Step 2.1 First Full design Matrix
+Step 2.2 - Formula and Model selection done
+Step 2 - 2D Regression done
+Step 2: Pooled Regression done
+Normal termination
+Step 3: Creating new dictionary
+Step 4: Plotting selected gene
