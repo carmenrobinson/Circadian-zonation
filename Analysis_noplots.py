@@ -537,3 +537,245 @@ for name_gene, reg in dic_reg.items():
             iplot(fig)
             compute_figure_3D_mpl(reg, array_gene_time)
 
+
+# ## 4. Classify genes
+
+# First, create the functions needed for classification
+
+# In[17]:
+
+
+def return_var_angle_amplitude(dic_param):
+    """"""""""""""" Compute amplitude and angle deviation of a given model """""""""""""""
+    X = np.arange(8)
+    l_a = dic_param['a0'] + dic_param['a1']*X + dic_param['a2']*0.5*(3*X**2-1)
+    l_b = dic_param['b0'] + dic_param['b1']*X + dic_param['b2']*0.5*(3*X**2-1)
+    l_r = np.sqrt(l_a**2+l_b**2)
+    l_angle = np.arctan2(l_b, l_a )
+    l_angle = [angle for angle in l_angle if angle!=0]
+    std_r =np.std(l_r)
+    std_angle = scipy.stats.circstd(l_angle)
+    return std_r, std_angle*24/(2*np.pi)
+    
+def compute_dic_cluster(dic_reg):
+    """"""""""""""" Compute clusters of genes """""""""""""""
+    dic_cluster = {'F' :[], 'Z' : [], 'R' : [], 'Z+R' : [],  'ZxR' : []}
+    for name_gene in dic_reg:
+        selected, B, SE, bic,l_schwartz, Xx_pred, Xt_pred, Y_pred, var_exp, var_exp_re = dic_reg[name_gene]
+        set_selected = set(selected)
+        if len(selected)==1:
+            dic_cluster['F'].append(  (name_gene, selected, B,  bic, var_exp, var_exp_re)  )
+
+        elif set_selected == set(['mu0', 'a0','b0']) or set_selected ==set(['mu0', 'a0']) or set_selected == set(['mu0', 'b0']):
+            dic_cluster['R'].append( (name_gene, selected, B, bic, var_exp, var_exp_re)  )
+
+        elif 'a0' not in selected and 'a1' not in selected and 'a2' not in selected and 'b0' not in selected and 'b1' not in selected and 'b2' not in selected:
+            if 'mu1' in selected or 'mu2' in selected or 'mu3' in selected:
+                dic_cluster['Z'].append(  (name_gene, selected, B, bic, var_exp, var_exp_re)  )
+            else:
+                print(selected)
+                print('BUG in compute dic cluster')
+        else:
+            if 'a1' not in selected and 'a2' not in selected and 'b1' not in selected and 'b2' not in selected:
+                dic_cluster['Z+R'].append([name_gene, selected, B, bic, var_exp, var_exp_re])
+            else:
+                dic_param = {'a0' : 0, 'a1' : 0, 'a2' : 0, 'b0' : 0, 'b1' : 0, 'b2' : 0, 'mu0' : 0, 'mu1' : 0, 'mu2' : 0}
+                for name_par, par in zip(selected, B):
+                    dic_param[name_par] = par
+                std_r, std_angle = return_var_angle_amplitude(dic_param)
+                dic_cluster['ZxR'].append([name_gene, selected, B, bic, var_exp, var_exp_re, std_r, std_angle])
+            
+        #sort all list per variance explained
+        dic_cluster['F'] = sorted(dic_cluster['F'], key=operator.itemgetter(4), reverse=True)
+        dic_cluster['Z'] = sorted(dic_cluster['Z'], key=operator.itemgetter(4), reverse=True)
+        dic_cluster['R'] = sorted(dic_cluster['R'], key=operator.itemgetter(4), reverse=True)
+        dic_cluster['Z+R'] = sorted(dic_cluster['Z+R'], key=operator.itemgetter(4), reverse=True)
+        dic_cluster['ZxR'] = sorted(dic_cluster['ZxR'], key=operator.itemgetter(4), reverse=True)
+
+    return dic_cluster
+
+dic_cluster = compute_dic_cluster(dic_reg)
+
+
+# Define a function to plot the fits
+# 
+
+# In[18]:
+
+
+cmap = matplotlib.cm.get_cmap('rainbow')
+color = ['lightblue', 'coral','yellowgreen','pink']
+
+def plot_gene_with_fit(name_gene, title = '', color = [cmap(x) for x in np.linspace(0,1,4,endpoint = True)], pp = None):
+    #get model prediction
+    selected, B, SE,  bic,  l_schwartz,Xx_pred, Xt_pred, Y_pred, var_exp, var_exp_re = dic_reg[name_gene]        
+    y_formatted = np.zeros((80,40))
+    for idx, val in enumerate(Y_pred):
+        y_formatted[int(idx/40), int(idx%40)] = val
+    
+    #plot experimental points
+    #plt.figure(figsize=(15,5))
+    f, (ax1, ax2) = plt.subplots(1, 2, figsize=(15,5))
+    for t in range(4):
+        ax1.plot(np.linspace(0,7,8, endpoint = True), dic_itz[name_gene]['rep1'][:,t], 'o' ,   color = color[t], markersize=10)
+        ax1.plot(np.linspace(0,7,8, endpoint = True), dic_itz[name_gene]['rep2'][:,t], 'v' ,  color = color[t], markersize=10)
+        ax1.plot(np.linspace(0,7,8, endpoint = True), dic_itz[name_gene]['rep3'][:,t],  'p' , color = color[t], markersize=10)
+    #plot fits
+    for t in range(0,40,10):
+        ax1.plot(np.linspace(0,7,80, endpoint = True), y_formatted[:,t], label = 't='+str(int(t*6/10)), color = color[int(t/10)], lw = 2)
+    #ax.legend(loc='best')
+    #Shrink current axis by 10%
+    box = ax1.get_position()
+    ax1.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    # Put a legend to the right of the current axis
+    ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    ax1.set_xlim([-0.5,7.5])
+    ax1.set_xlabel("Layer")
+    ax1.set_ylabel("Log2-Expression")
+    ax1.set_title(title + ' (log data + fit)')   
+    
+    color = [cmap(x) for x in np.linspace(0,1,8,endpoint = True)]
+    for x in range(8):
+        ax2.plot(np.linspace(0,18,4, endpoint = True), dic_itz[name_gene]['rep1'][x,:], 'o' ,   color = color[x], markersize=10)
+        ax2.plot(np.linspace(0,18,4, endpoint = True), dic_itz[name_gene]['rep2'][x,:], 'v' ,  color = color[x], markersize=10)
+        ax2.plot(np.linspace(0,18,4, endpoint = True), dic_itz[name_gene]['rep3'][x,:],  'p' , color = color[x], markersize=10)
+        
+    for x in range(0,80,10):
+        ax2.plot(np.linspace(0,24,40, endpoint = True), y_formatted[x,:], label = 'x='+str(int(x/10)), color = color[int(x/10)], lw = 2)
+        
+    #Shrink current axis by 10%
+    box = ax2.get_position()
+    ax2.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    # Put a legend to the right of the current axis
+    ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    ax2.set_xlim([-0.5,24])
+    ax2.set_xlabel("Time")
+    ax2.set_ylabel("Log2-Expression")
+    ax2.set_title(title+ ' (log data + fit)')  
+    
+
+    if pp is not None:
+        pp.savefig()
+    else:
+        plt.show()
+    plt.close()
+    
+color1 = sn.color_palette("husl", 4) #['#3288BD', '#ABDDA4','#FDAE61','#D53E4F']
+color2 = sn.color_palette("GnBu_d",8)#sn.color_palette("Reds",8)##['#D53E4F', '#F46D43','#FDAE61','#FEE08B', "#E6F598", "#ABDDA4", "#66C2A5", "#3288BD"]
+color3 = sn.color_palette("husl", 24)
+def plot_gene_with_fit_alt(name_gene, title = '', annotate_phase = False, force_R = 'False'):
+    true_acrophase = None
+    amplitude = None
+    
+    #get model prediction
+    selected, B, SE,  bic,  l_schwartz,Xx_pred, Xt_pred, Y_pred, var_exp, var_exp_re = dic_reg[name_gene]
+    if force_R:
+        array_gene_time =np.concatenate( (dic_itz[name_gene]['rep1'], dic_itz[name_gene]['rep2'], dic_itz[name_gene]['rep3'][:,[0,2]]), axis = 1)
+        selected, B, SE,  bic, l_schwartz, Xx_pred, Xt_pred, Y_pred, var_exp, var_exp_re = make_2D_regression(array_gene_time, predict = True, force_complete = False, force_R = True)        
+        
+    y_formatted = np.zeros((80,40))
+    for idx, val in enumerate(Y_pred):
+        y_formatted[int(idx/40), int(idx%40)] = val
+    
+    #plot experimental points
+    #plt.figure(figsize=(15,5))
+    f, (ax1, ax2) = plt.subplots(2, 1, figsize=(6,11))
+    #f, (ax1, ax2) = plt.subplots(2, 1, figsize=(10,10))
+    for t in range(4):
+        ax1.plot(np.linspace(1,8,8, endpoint = True), dic_itz[name_gene]['rep1'][:,t], '.' ,   color = color1[t], markersize=10)
+        ax1.plot(np.linspace(1,8,8, endpoint = True), dic_itz[name_gene]['rep2'][:,t], '.' ,  color = color1[t], markersize=10)
+        ax1.plot(np.linspace(1,8,8, endpoint = True), dic_itz[name_gene]['rep3'][:,t],  '.' , color = color1[t], markersize=10)
+    #plot fits
+    for t in range(0,40,10):
+        ax1.plot(np.linspace(1,8,80, endpoint = True), y_formatted[:,t], label = 't='+str(int(t*6/10)), color = color1[int(t/10)], lw = 2)
+    #ax.legend(loc='best')
+    #Shrink current axis by 10%
+    box = ax1.get_position()
+    ax1.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    # Put a legend to the right of the current axis
+    ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    ax1.set_xlim([0.25,8.25])
+    ax1.set_xticks([1,2,3,4,5,6,7,8])
+    ax1.set_xlabel("Layer", fontsize=15)
+    ax1.set_ylabel("Log2-Expression", fontsize=15)
+    ax1.set_title(title, fontsize=15) 
+    
+    for x in range(8):
+        ax2.plot(np.linspace(0,18,4, endpoint = True), dic_itz[name_gene]['rep1'][x,:], '.' ,   color = color2[x], markersize=10)
+        ax2.plot(np.linspace(0,18,4, endpoint = True), dic_itz[name_gene]['rep2'][x,:], '.' ,  color = color2[x], markersize=10)
+        ax2.plot(np.linspace(0,18,4, endpoint = True), dic_itz[name_gene]['rep3'][x,:],  '.' , color = color2[x], markersize=10, label = 'x='+str(x+1) if annotate_phase else None)
+
+    if not annotate_phase:
+        for x in range(0,80,10):
+            ax2.plot(np.linspace(0,24,40, endpoint = False), y_formatted[x,:], label = 'x='+str(int((x+10)/10)), color = color2[int(x/10)], lw = 2)
+    else:
+        for x in range(0,80,10):
+            time_domain = np.linspace(0,24,40, endpoint = False)
+            true_acrophase = time_domain[np.argmax(y_formatted[x,:])]
+            acrophase = int(round(time_domain[np.argmax(y_formatted[x,:])]))
+            max_val = np.max(y_formatted[x,:])
+            min_val = np.min(y_formatted[x,:])
+            amplitude = (max_val-min_val)/2
+            text_pos = (acrophase+12)%24
+            if text_pos>18:
+                text_pos = 18
+            elif text_pos <2:
+                text_pos = 2
+            ax2.plot(time_domain, y_formatted[x,:], color = color3[acrophase], lw = 2)
+            ax2.annotate(r'$\phi: $'+ str(acrophase), (text_pos, max_val*1.1), fontsize = 20)
+            break
+        
+    #Shrink current axis by 10%
+    box = ax2.get_position()
+    ax2.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    # Put a legend to the right of the current axis
+    ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    ax2.set_xlim([-2,24])
+    ax2.set_xticks([0,6,12,18])
+    ax2.set_xlabel("ZT", fontsize=15)
+    ax2.set_ylabel("Log2-Expression", fontsize=15)
+    #ax2.set_title(title+ ' (log data + fit)') 
+    #plt.tight_layout()
+    plt.savefig("Output/Fits/"+title+".pdf")
+    plt.show()
+    plt.close()
+    
+    return amplitude, true_acrophase
+
+
+# Plot some examples of each category
+
+# In[19]:
+
+
+#get example of flat gene
+best_flat = dic_cluster['F'][0][0]
+plot_gene_with_fit(best_flat, title = 'Example fit for flat gene :' + best_flat, color = color)
+
+#get example of zonated gene
+best_zonated = dic_cluster['Z'][1][0]
+plot_gene_with_fit(best_zonated, title = 'Example of fit for zonated gene:' + best_zonated, color = color)
+
+#get example of rhythmic gene
+best_rhythmic = dic_cluster['R'][2][0]
+plot_gene_with_fit(best_rhythmic, title = 'Example of fit for rhythmic gene:' + best_rhythmic, color = color)
+
+#get example of zonated-rhythmic gene
+best_independant = dic_cluster['Z+R'][0][0]
+plot_gene_with_fit(best_independant, title = 'Example of fit for independant gene:' + best_independant, color = color)
+
+#get example of zonated-rhythmic gene
+best_zxr = dic_cluster['ZxR'][0][0]
+plot_gene_with_fit(best_zxr, title = 'Example of fit forinteracting gene:' + best_zxr, color = color)
+
+#plot clock genes
+plot_gene_with_fit_alt("elovl3", title = "Elovl3", annotate_phase = False)
+
+plot_gene_with_fit_alt("cry1", title = "Cry1", annotate_phase = False)
+
+plot_gene_with_fit_alt("uox", title = "Uox", annotate_phase = False)
+
+plot_gene_with_fit_alt("per1", title = "Per1", annotate_phase = False)
+
+plot_gene_with_fit_alt("pck1", title = "pck1", annotate_phase = False)
+
